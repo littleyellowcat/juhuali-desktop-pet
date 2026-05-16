@@ -23,7 +23,7 @@ dotnet build src/JuHuaLiPet/JuHuaLiPet.csproj -c Release
 ## 发布单文件 exe
 
 ```bash
-dotnet publish src/JuHuaLiPet/JuHuaLiPet.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o dist
+dotnet publish src/JuHuaLiPet/JuHuaLiPet.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -o dist
 ```
 
 发布后生成：

@@ -9,15 +9,15 @@
 
 ## 下载
 
-推荐从 GitHub Release 下载：
+推荐从 GitHub Release 下载最新版：
 
-- [v1.0.0 Release](https://github.com/littleyellowcat/juhuali-desktop-pet/releases/tag/v1.0.0)
+- [Latest Release](https://github.com/littleyellowcat/juhuali-desktop-pet/releases/latest)
 
 成品文件也同步放在仓库的 `release-assets/` 目录：
 
 | 文件 | 用途 |
 |---|---|
-| `release-assets/JuHuaLiPet.exe` | Windows 独立桌宠 |
+| `release-assets/JuHuaLiPet.exe` | Windows 独立桌宠，单文件运行版 |
 | `release-assets/juhuali-codex-pet.zip` | Codex Pets 自定义宠物包 |
 
 如果仓库创建了 GitHub Release，建议优先从 Release 页面下载。
