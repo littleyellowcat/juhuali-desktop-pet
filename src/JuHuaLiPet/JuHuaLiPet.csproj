@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>JuHuaLiPet</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\juhuali-spritesheet.png" />
+    <Resource Include="Assets\juhuali-voice.mp4" />
+    <Resource Include="Assets\juhuali-reminder.wav" />
+    <Resource Include="Assets\Sounds\*.wav" />
+  </ItemGroup>
+
+</Project>

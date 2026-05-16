@@ -1,0 +1,17 @@
+bin/
+obj/
+dist/
+.vs/
+.vscode/
+*.user
+*.suo
+*.tmp
+*.log
+
+# Local runtime data
+todos.json
+settings.json
+
+# Generated analysis or scratch files
+video-analysis/
+.video_tools/
