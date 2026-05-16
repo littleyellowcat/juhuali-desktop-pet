@@ -9,7 +9,11 @@
 
 ## 下载
 
-成品文件放在仓库的 `release-assets/` 目录：
+推荐从 GitHub Release 下载：
+
+- [v1.0.0 Release](https://github.com/littleyellowcat/juhuali-desktop-pet/releases/tag/v1.0.0)
+
+成品文件也同步放在仓库的 `release-assets/` 目录：
 
 | 文件 | 用途 |
 |---|---|
