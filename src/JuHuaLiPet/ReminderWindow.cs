@@ -22,8 +22,8 @@ internal sealed class ReminderWindow : Window
     public ReminderWindow(TodoItem item)
     {
         Title = "菊花梨提醒你";
-        Width = 380;
-        Height = 190;
+        Width = 430;
+        Height = 250;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.Manual;
         Topmost = true;
@@ -39,8 +39,13 @@ internal sealed class ReminderWindow : Window
             CornerRadius = new CornerRadius(8)
         };
 
-        var stack = new StackPanel();
-        stack.Children.Add(new TextBlock
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        layout.Children.Add(new TextBlock
         {
             Text = "提醒到点了",
             FontWeight = FontWeights.Bold,
@@ -48,22 +53,38 @@ internal sealed class ReminderWindow : Window
             Foreground = Ink,
             Margin = new Thickness(0, 0, 0, 4)
         });
-        stack.Children.Add(new TextBlock
+
+        var subtitle = new TextBlock
         {
             Text = "主人，该做这件事啦：",
             FontSize = 13,
             Foreground = Muted,
-            Margin = new Thickness(0, 0, 0, 10)
-        });
-        stack.Children.Add(new TextBlock
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+        Grid.SetRow(subtitle, 1);
+        layout.Children.Add(subtitle);
+
+        var taskText = new TextBlock
         {
             Text = item.Title,
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
             Foreground = Ink,
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 18)
-        });
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var taskPanel = new Border
+        {
+            Padding = new Thickness(12, 10, 12, 10),
+            Margin = new Thickness(0, 0, 0, 16),
+            Background = new SolidColorBrush(Color.FromRgb(255, 246, 225)),
+            BorderBrush = WarmBorder,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Child = taskText
+        };
+        Grid.SetRow(taskPanel, 2);
+        layout.Children.Add(taskPanel);
 
         var buttons = new StackPanel
         {
@@ -73,8 +94,10 @@ internal sealed class ReminderWindow : Window
         buttons.Children.Add(Button("5 分钟后", ReminderResult.Snooze));
         buttons.Children.Add(Button("知道了", ReminderResult.Dismiss));
         buttons.Children.Add(Button("完成", ReminderResult.Done, accent: true));
-        stack.Children.Add(buttons);
-        root.Child = stack;
+        Grid.SetRow(buttons, 3);
+        layout.Children.Add(buttons);
+
+        root.Child = layout;
         Content = root;
     }
 
