@@ -18,8 +18,8 @@ internal sealed class TodoDialog : Window
     public TodoDialog()
     {
         Title = "添加待办";
-        Width = 430;
-        Height = 390;
+        Width = 460;
+        Height = 360;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Topmost = true;
@@ -27,14 +27,8 @@ internal sealed class TodoDialog : Window
 
         var dueAt = DateTime.Now.AddMinutes(30);
         _titleBox = TextBox();
-        _datePicker = new DatePicker
-        {
-            SelectedDate = dueAt.Date,
-            Height = 34,
-            FontSize = 14,
-            Margin = new Thickness(0, 8, 0, 16)
-        };
-        _timeBox = TextBox(dueAt.ToString("HH:mm", CultureInfo.InvariantCulture));
+        _datePicker = DatePicker(dueAt.Date);
+        _timeBox = TextBox(dueAt.ToString("HH:mm", CultureInfo.InvariantCulture), bottomMargin: 0);
 
         var root = new Grid { Margin = new Thickness(22) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -60,7 +54,7 @@ internal sealed class TodoDialog : Window
 
         var form = new Border
         {
-            Padding = new Thickness(16),
+            Padding = new Thickness(14),
             CornerRadius = new CornerRadius(8),
             Background = new SolidColorBrush(Color.FromRgb(255, 250, 239)),
             BorderBrush = new SolidColorBrush(Color.FromRgb(247, 212, 145)),
@@ -71,10 +65,25 @@ internal sealed class TodoDialog : Window
         var fields = new StackPanel();
         fields.Children.Add(Label("待办内容"));
         fields.Children.Add(_titleBox);
-        fields.Children.Add(Label("日期"));
-        fields.Children.Add(_datePicker);
-        fields.Children.Add(Label("时间"));
-        fields.Children.Add(_timeBox);
+
+        var dateTimeGrid = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        dateTimeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        dateTimeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
+        dateTimeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+
+        var dateStack = new StackPanel();
+        dateStack.Children.Add(Label("日期"));
+        dateStack.Children.Add(_datePicker);
+        Grid.SetColumn(dateStack, 0);
+        dateTimeGrid.Children.Add(dateStack);
+
+        var timeStack = new StackPanel();
+        timeStack.Children.Add(Label("时间"));
+        timeStack.Children.Add(_timeBox);
+        Grid.SetColumn(timeStack, 2);
+        dateTimeGrid.Children.Add(timeStack);
+
+        fields.Children.Add(dateTimeGrid);
         fields.Children.Add(new TextBlock
         {
             Text = "使用 24 小时制，例如 09:05 或 21:30。",
@@ -116,13 +125,29 @@ internal sealed class TodoDialog : Window
 
     private static TextBox TextBox(string text = "")
     {
+        return TextBox(text, bottomMargin: 12);
+    }
+
+    private static TextBox TextBox(string text, double bottomMargin)
+    {
         return new TextBox
         {
             Text = text,
             Height = 34,
             FontSize = 14,
             Padding = new Thickness(8, 5, 8, 5),
-            Margin = new Thickness(0, 8, 0, 16)
+            Margin = new Thickness(0, 8, 0, bottomMargin)
+        };
+    }
+
+    private static DatePicker DatePicker(DateTime selectedDate)
+    {
+        return new DatePicker
+        {
+            SelectedDate = selectedDate,
+            Height = 34,
+            FontSize = 14,
+            Margin = new Thickness(0, 8, 0, 0)
         };
     }
 
