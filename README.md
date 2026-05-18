@@ -27,9 +27,7 @@
 - 桌面透明悬浮宠物
 - 左键拖动
 - 待机随机动作
-- 自动小范围溜达
-- 任务栏躲猫猫
-- 迷你键盘联动
+- 自动小范围慢踱步
 - 双击互动与专属叫声
 - 右键创建待办事项
 - 到点自动提醒
@@ -38,12 +36,6 @@
 - 宠物大小调节
 - 音量调节
 - 设置自动保存
-
-## 迷你键盘模式
-
-右键菊花梨，选择“打开迷你键盘”。屏幕底部会出现一个迷你键盘，当你按到键盘上列出的常用键时，菊花梨会跳到对应按键上。
-
-迷你键盘只根据按下的键名触发动画，不记录、保存或上传输入内容。
 
 ## Windows 独立版安装
 
@@ -94,7 +86,7 @@ dotnet build src/JuHuaLiPet/JuHuaLiPet.csproj -c Release
 发布单文件 exe：
 
 ```bash
-dotnet publish src/JuHuaLiPet/JuHuaLiPet.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o dist
+dotnet publish src/JuHuaLiPet/JuHuaLiPet.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -o dist
 ```
 
 更多开发说明见 [docs/BUILD.md](docs/BUILD.md)。
