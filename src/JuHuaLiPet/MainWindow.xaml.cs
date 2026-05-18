@@ -17,22 +17,34 @@ public partial class MainWindow : Window
     private readonly PetSoundPlayer _soundPlayer = new();
     private readonly Random _random = new();
     private readonly DispatcherTimer _reminderTimer = new() { Interval = TimeSpan.FromSeconds(10) };
-    private readonly DispatcherTimer _idleBehaviorTimer = new() { Interval = TimeSpan.FromSeconds(8) };
+    private readonly DispatcherTimer _idleBehaviorTimer = new() { Interval = TimeSpan.FromSeconds(6) };
     private readonly DispatcherTimer _strollTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+    private readonly DispatcherTimer _keyboardHopTimer = new() { Interval = TimeSpan.FromMilliseconds(24) };
     private SpriteAnimator? _animator;
     private ReminderWindow? _activeReminder;
+    private MiniKeyboardWindow? _miniKeyboard;
+    private GlobalKeyboardHook? _keyboardHook;
     private bool _dragging;
     private bool _isStrolling;
+    private bool _isHidingNearTaskbar;
+    private bool _keyboardMode;
+    private bool _isKeyboardHopping;
     private bool _modalOpen;
     private DateTime _busyUntil = DateTime.MinValue;
     private DateTime _strollStartedAt;
+    private DateTime _keyboardHopStartedAt;
     private TimeSpan _strollDuration;
+    private TimeSpan _keyboardHopDuration;
     private Point _dragStartScreen;
     private double _dragStartLeft;
     private double _dragStartTop;
     private double _lastDragX;
     private double _strollStartLeft;
     private double _strollTargetLeft;
+    private double _keyboardHopStartLeft;
+    private double _keyboardHopStartTop;
+    private double _keyboardHopTargetLeft;
+    private double _keyboardHopTargetTop;
 
     public MainWindow()
     {
@@ -46,6 +58,7 @@ public partial class MainWindow : Window
         _reminderTimer.Tick += (_, _) => CheckReminders();
         _idleBehaviorTimer.Tick += (_, _) => MaybeRunIdleBehavior();
         _strollTimer.Tick += (_, _) => AdvanceStroll();
+        _keyboardHopTimer.Tick += (_, _) => AdvanceKeyboardHop();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -98,6 +111,11 @@ public partial class MainWindow : Window
         menu.Items.Add(MenuItem("查看待办...", ShowTodos));
         menu.Items.Add(MenuItem("测试提醒声音", TestReminder));
         menu.Items.Add(MenuItem("设置大小和音量...", ShowSettings));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(MenuItem(_keyboardMode ? "关闭迷你键盘" : "打开迷你键盘", ToggleMiniKeyboard));
+        menu.Items.Add(MenuItem("让菊花梨散步", () => Dispatcher.BeginInvoke(() => StartStroll(180, 460, 2200, 5200))));
+        menu.Items.Add(MenuItem("躲到任务栏下", () => Dispatcher.BeginInvoke(StartTaskbarPeek)));
+        menu.Items.Add(MenuItem("开心跳一下", () => Dispatcher.BeginInvoke(() => PlayIdleAction(PetAnimationState.Jumping, PetSoundCue.Happy, TimeSpan.FromMilliseconds(1700), 1))));
         menu.Items.Add(new Separator());
         menu.Items.Add(MenuItem("退出菊花梨", Close));
     }
@@ -259,30 +277,34 @@ public partial class MainWindow : Window
 
     private void MaybeRunIdleBehavior()
     {
-        _idleBehaviorTimer.Interval = TimeSpan.FromSeconds(_random.Next(6, 13));
+        _idleBehaviorTimer.Interval = TimeSpan.FromSeconds(_random.Next(4, 10));
         if (IsInteractionBusy())
         {
             return;
         }
 
         var roll = _random.Next(100);
-        if (roll < 34)
+        if (roll < 42)
         {
-            StartStroll();
+            StartStroll(120, 380, 1800, 4300);
         }
-        else if (roll < 50)
+        else if (roll < 52)
+        {
+            StartTaskbarPeek();
+        }
+        else if (roll < 64)
         {
             PlayIdleAction(PetAnimationState.Waving, PetSoundCue.Greeting, TimeSpan.FromMilliseconds(1500), 0.55);
         }
-        else if (roll < 66)
+        else if (roll < 76)
         {
             PlayIdleAction(PetAnimationState.Jumping, PetSoundCue.Happy, TimeSpan.FromMilliseconds(1700), 0.5);
         }
-        else if (roll < 82)
+        else if (roll < 89)
         {
             PlayIdleAction(PetAnimationState.Review, PetSoundCue.Curious, TimeSpan.FromMilliseconds(1400), 0.45);
         }
-        else if (roll < 94)
+        else
         {
             PlayIdleAction(PetAnimationState.Waiting, PetSoundCue.Nudge, TimeSpan.FromMilliseconds(1500), 0.4);
         }
@@ -303,7 +325,7 @@ public partial class MainWindow : Window
         SetBusy(duration + TimeSpan.FromSeconds(1.2));
     }
 
-    private void StartStroll()
+    private void StartStroll(int minDistance = 90, int maxDistance = 221, int minDurationMs = 1600, int maxDurationMs = 2800)
     {
         if (IsInteractionBusy())
         {
@@ -312,7 +334,7 @@ public partial class MainWindow : Window
 
         var workArea = SystemParameters.WorkArea;
         var direction = _random.Next(2) == 0 ? -1 : 1;
-        var distance = _random.Next(90, 221) * direction;
+        var distance = _random.Next(minDistance, maxDistance + 1) * direction;
         var minLeft = workArea.Left + 8;
         var maxLeft = workArea.Right - Width - 8;
         var targetLeft = Math.Clamp(Left + distance, minLeft, maxLeft);
@@ -329,7 +351,7 @@ public partial class MainWindow : Window
 
         _isStrolling = true;
         _strollStartedAt = DateTime.Now;
-        _strollDuration = TimeSpan.FromMilliseconds(_random.Next(1600, 2800));
+        _strollDuration = TimeSpan.FromMilliseconds(_random.Next(minDurationMs, maxDurationMs + 1));
         _strollStartLeft = Left;
         _strollTargetLeft = targetLeft;
         _animator?.SetState(direction > 0 ? PetAnimationState.RunningRight : PetAnimationState.RunningLeft);
@@ -339,6 +361,64 @@ public partial class MainWindow : Window
         }
 
         _strollTimer.Start();
+    }
+
+    private async void StartTaskbarPeek()
+    {
+        if (IsInteractionBusy())
+        {
+            return;
+        }
+
+        CancelStroll();
+        var workArea = SystemParameters.WorkArea;
+        var originalTop = Top;
+        var peekTop = workArea.Bottom - Height * 0.42;
+        if (peekTop <= originalTop + 18)
+        {
+            peekTop = Math.Min(SystemParameters.PrimaryScreenHeight - Height * 0.42, originalTop + Height * 0.45);
+        }
+
+        _isHidingNearTaskbar = true;
+        SetBusy(TimeSpan.FromSeconds(5));
+        _soundPlayer.Play(PetSoundCue.Curious);
+        _animator?.SetState(PetAnimationState.Waiting);
+
+        await AnimateTopAsync(peekTop, TimeSpan.FromMilliseconds(680));
+        if (!_isHidingNearTaskbar)
+        {
+            return;
+        }
+
+        Topmost = false;
+        await Task.Delay(_random.Next(1200, 2300));
+        Topmost = true;
+        _soundPlayer.Play(PetSoundCue.Happy);
+        _animator?.PlayTemporary(PetAnimationState.Jumping, TimeSpan.FromMilliseconds(900));
+        await AnimateTopAsync(originalTop, TimeSpan.FromMilliseconds(620));
+        _isHidingNearTaskbar = false;
+        _animator?.SetState(PetAnimationState.Idle);
+    }
+
+    private async Task AnimateTopAsync(double targetTop, TimeSpan duration)
+    {
+        var startTop = Top;
+        var start = DateTime.Now;
+        while ((DateTime.Now - start) < duration)
+        {
+            if (_dragging)
+            {
+                _isHidingNearTaskbar = false;
+                return;
+            }
+
+            var progress = Math.Clamp((DateTime.Now - start).TotalMilliseconds / duration.TotalMilliseconds, 0, 1);
+            var eased = 0.5 - Math.Cos(progress * Math.PI) / 2;
+            Top = startTop + (targetTop - startTop) * eased;
+            await Task.Delay(16);
+        }
+
+        Top = targetTop;
     }
 
     private void AdvanceStroll()
@@ -376,10 +456,133 @@ public partial class MainWindow : Window
         _animator?.SetState(PetAnimationState.Idle);
     }
 
+    private void ToggleMiniKeyboard()
+    {
+        if (_keyboardMode)
+        {
+            StopMiniKeyboardMode();
+        }
+        else
+        {
+            StartMiniKeyboardMode();
+        }
+    }
+
+    private void StartMiniKeyboardMode()
+    {
+        if (_keyboardMode)
+        {
+            return;
+        }
+
+        CancelStroll();
+        _isHidingNearTaskbar = false;
+        _keyboardMode = true;
+        _miniKeyboard = new MiniKeyboardWindow { Owner = this };
+        _miniKeyboard.Show();
+        _keyboardHook = new GlobalKeyboardHook();
+        _keyboardHook.KeyPressed += OnGlobalKeyPressed;
+
+        ApplyPetScale(Math.Min(_settingsStore.Settings.PetScale, 0.72), preserveAnchor: false);
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (_miniKeyboard?.TryPressKey(Key.Space, out var center) == true)
+            {
+                StartKeyboardHop(center, quiet: true);
+            }
+        });
+        _soundPlayer.Play(PetSoundCue.Greeting);
+        _animator?.PlayTemporary(PetAnimationState.Waving, TimeSpan.FromMilliseconds(1300));
+        SetBusy(TimeSpan.FromSeconds(1.2));
+    }
+
+    private void StopMiniKeyboardMode()
+    {
+        _keyboardMode = false;
+        _isKeyboardHopping = false;
+        _keyboardHopTimer.Stop();
+        if (_keyboardHook != null)
+        {
+            _keyboardHook.KeyPressed -= OnGlobalKeyPressed;
+            _keyboardHook.Dispose();
+            _keyboardHook = null;
+        }
+
+        _miniKeyboard?.Close();
+        _miniKeyboard = null;
+        ApplyPetScale(_settingsStore.Settings.PetScale);
+        _animator?.SetState(PetAnimationState.Idle);
+        SetBusy(TimeSpan.FromSeconds(1));
+    }
+
+    private void OnGlobalKeyPressed(object? sender, Key key)
+    {
+        if (!_keyboardMode || _miniKeyboard == null)
+        {
+            return;
+        }
+
+        if (_miniKeyboard.TryPressKey(key, out var center))
+        {
+            StartKeyboardHop(center);
+        }
+    }
+
+    private void StartKeyboardHop(Point keyCenterOnScreen, bool quiet = false)
+    {
+        if (!_keyboardMode)
+        {
+            return;
+        }
+
+        CancelStroll();
+        _keyboardHopStartLeft = Left;
+        _keyboardHopStartTop = Top;
+        _keyboardHopTargetLeft = keyCenterOnScreen.X - Width / 2;
+        _keyboardHopTargetTop = keyCenterOnScreen.Y - Height + 24;
+        _keyboardHopStartedAt = DateTime.Now;
+        _keyboardHopDuration = TimeSpan.FromMilliseconds(220);
+        _isKeyboardHopping = true;
+        _animator?.PlayTemporary(PetAnimationState.Jumping, TimeSpan.FromMilliseconds(420));
+        if (!quiet && _random.NextDouble() < 0.16)
+        {
+            _soundPlayer.Play(PetSoundCue.Tap);
+        }
+
+        _keyboardHopTimer.Start();
+    }
+
+    private void AdvanceKeyboardHop()
+    {
+        if (!_isKeyboardHopping)
+        {
+            _keyboardHopTimer.Stop();
+            return;
+        }
+
+        var progress = Math.Clamp((DateTime.Now - _keyboardHopStartedAt).TotalMilliseconds / _keyboardHopDuration.TotalMilliseconds, 0, 1);
+        var eased = 0.5 - Math.Cos(progress * Math.PI) / 2;
+        var arc = Math.Sin(progress * Math.PI) * 22;
+        Left = _keyboardHopStartLeft + (_keyboardHopTargetLeft - _keyboardHopStartLeft) * eased;
+        Top = _keyboardHopStartTop + (_keyboardHopTargetTop - _keyboardHopStartTop) * eased - arc;
+
+        if (progress < 1)
+        {
+            return;
+        }
+
+        Left = _keyboardHopTargetLeft;
+        Top = _keyboardHopTargetTop;
+        _isKeyboardHopping = false;
+        _keyboardHopTimer.Stop();
+    }
+
     private bool IsInteractionBusy()
     {
         return _dragging
             || _isStrolling
+            || _isHidingNearTaskbar
+            || _keyboardMode
             || _modalOpen
             || _activeReminder != null
             || ContextMenu?.IsOpen == true
@@ -424,6 +627,7 @@ public partial class MainWindow : Window
         }
 
         CancelStroll();
+        _isHidingNearTaskbar = false;
         SetBusy(TimeSpan.FromSeconds(1));
         _dragging = true;
         _dragStartScreen = PointToScreen(e.GetPosition(this));
@@ -462,5 +666,11 @@ public partial class MainWindow : Window
         ReleaseMouseCapture();
         _animator?.SetState(PetAnimationState.Idle);
         SetBusy(TimeSpan.FromSeconds(2));
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        StopMiniKeyboardMode();
+        base.OnClosed(e);
     }
 }

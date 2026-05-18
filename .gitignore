@@ -15,4 +15,5 @@ settings.json
 
 # Generated analysis or scratch files
 video-analysis/
+video-reference/
 .video_tools/
