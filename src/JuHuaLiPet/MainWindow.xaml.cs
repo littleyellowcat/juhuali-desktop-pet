@@ -100,7 +100,7 @@ public partial class MainWindow : Window
         menu.Items.Add(MenuItem("测试提醒声音", TestReminder));
         menu.Items.Add(MenuItem("设置大小和音量...", ShowSettings));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MenuItem("让菊花梨踱步", () => Dispatcher.BeginInvoke(() => StartStroll(42, 120, 2600, 4600))));
+        menu.Items.Add(MenuItem("让菊花梨踱步", () => Dispatcher.BeginInvoke(() => StartStroll(100, 250, 1900, 3400))));
         menu.Items.Add(MenuItem("开心跳一下", () => Dispatcher.BeginInvoke(() => PlayIdleAction(PetAnimationState.Jumping, PetSoundCue.Happy, TimeSpan.FromMilliseconds(1700), 1))));
         menu.Items.Add(new Separator());
         menu.Items.Add(MenuItem("退出菊花梨", Close));
@@ -272,7 +272,7 @@ public partial class MainWindow : Window
         var roll = _random.Next(100);
         if (roll < 30)
         {
-            StartStroll(36, 110, 2600, 5200);
+            StartStroll(80, 220, 2200, 4200);
         }
         else if (roll < 48)
         {
@@ -307,7 +307,7 @@ public partial class MainWindow : Window
         SetBusy(duration + TimeSpan.FromSeconds(1.2));
     }
 
-    private void StartStroll(int minDistance = 36, int maxDistance = 120, int minDurationMs = 2600, int maxDurationMs = 5200)
+    private void StartStroll(int minDistance = 80, int maxDistance = 220, int minDurationMs = 2200, int maxDurationMs = 4200)
     {
         if (IsInteractionBusy())
         {
